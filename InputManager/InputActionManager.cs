@@ -26,6 +26,10 @@ public class InputActionManager
             while (!cancellationToken.IsCancellationRequested)
             {
                 var keyInfo = Console.ReadKey(true);
+                if (!_actions.ContainsKey(keyInfo.Key))
+                {
+                    continue;
+                }
                 var keyActions = _actions[keyInfo.Key];
                 if(keyActions != default)
                 {
