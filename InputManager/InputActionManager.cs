@@ -2,11 +2,23 @@
 
 namespace InputManager;
 
-public class InputActionManager
+public class InputActionManager(IConsole console)
 {
-    private readonly ConcurrentDictionary<ConsoleKey, Action<ConsoleKeyInfo>> _actions = new();
+    public static InputActionManager Create()
+        => new(new ConsoleWrapper());
+
+    private readonly ConcurrentDictionary<ConsoleKey, Func<ConsoleKeyInfo, CancellationToken, Task>> _actions = new();
+
+    private readonly IConsole _console = console;
 
     public InputActionManager RegisterAction(Action<ConsoleKeyInfo> action, params ConsoleKey[] keys)
+        => RegisterAction((keyInfo, _) =>
+        {
+            action(keyInfo);
+            return Task.CompletedTask;
+        }, keys);
+
+    public InputActionManager RegisterAction(Func<ConsoleKeyInfo, CancellationToken, Task> action, params IEnumerable<ConsoleKey> keys)
     {
         foreach(var key in keys)
         {
@@ -22,10 +34,9 @@ public class InputActionManager
     public Task StartListener(CancellationToken cancellationToken = default)
         => Task.Run(() =>
         {
-            // Is this check needed?
             while (!cancellationToken.IsCancellationRequested)
             {
-                var keyInfo = Console.ReadKey(true);
+                var keyInfo = _console.ReadKey(true);
                 if (!_actions.ContainsKey(keyInfo.Key))
                 {
                     continue;
@@ -33,13 +44,10 @@ public class InputActionManager
                 var keyActions = _actions[keyInfo.Key];
                 if(keyActions != default)
                 {
-                    var tasks = new List<Task>();
-                    foreach(var action in keyActions.GetInvocationList().Cast<Action<ConsoleKeyInfo>>()) //  Add specific delegate type to prevent cast
+                    foreach(var action in keyActions.GetInvocationList())
                     {
-                        tasks.Add(Task.Run(() => 
-                            action.Invoke(keyInfo), cancellationToken));
+                        action.DynamicInvoke(keyInfo, cancellationToken);
                     }
-                    // Task.WaitAll(tasks.ToArray())
                 }
             }
         }, cancellationToken);
