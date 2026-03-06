@@ -45,7 +45,7 @@ jobs:
         id: check_nuget
         continue-on-error: true
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.nuget.org/v3-flatcontainer/Vaype.InputManager/${{ steps.get_version.outputs.VERSION }}/yourpackageid.nuspec)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.nuget.org/v3-flatcontainer/Vaype.InputManager/${{ steps.get_version.outputs.VERSION }}/Vaype.InputManager.nuspec)
           if [ "$STATUS" = "200" ]; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
