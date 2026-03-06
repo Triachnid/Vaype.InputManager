@@ -41,15 +41,19 @@ jobs:
           VERSION=$(grep -oPm1 '(?<=<Version>)[^<]+' InputManager/InputManager.csproj)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Check if package exists
+      - name: Check if Version Exists
         id: check_nuget
-        uses: KinsonDigital/PackageMonster@v1.0.0
-        with:
-          package-name: 'Vaype.InputManager'
-          version: ${{ steps.get_version.outputs.version }}
+        continue-on-error: true
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.nuget.org/v3-flatcontainer/Vaype.InputManager/${{ steps.get_version.outputs.VERSION }}/yourpackageid.nuspec)
+          if [ "$STATUS" = "200" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Publish to nuget
-        if: steps.check_nuget.outputs.nuget-exists == 'false'
+        if: steps.check_nuget.outputs.exists == 'false'
         run: |
           dotnet pack InputManager/InputManager.csproj -c Release -o out
           dotnet nuget push out/*.nupkg \
