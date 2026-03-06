@@ -41,19 +41,15 @@ jobs:
           VERSION=$(grep -oPm1 '(?<=<Version>)[^<]+' InputManager/InputManager.csproj)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Check if Version Exists
-        id: check_nuget
-        continue-on-error: true
-        run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.nuget.org/v3-flatcontainer/Vaype.InputManager/${{ steps.get_version.outputs.VERSION }}/Vaype.InputManager.nuspec)
-          if [ "$STATUS" = "200" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
+      - name: Check version on NuGet
+        id: check
+        uses: MeilCli/nuget-update-check-action@v4
+        with:
+          package-id: 'Vaype.InputManager'
+          version: ${{ steps.get_version.outputs.VERSION }}
 
       - name: Publish to nuget
-        if: steps.check_nuget.outputs.exists == 'false'
+        if: steps.check.outputs.is_update == 'true'
         run: |
           dotnet pack InputManager/InputManager.csproj -c Release -o out
           dotnet nuget push out/*.nupkg \
