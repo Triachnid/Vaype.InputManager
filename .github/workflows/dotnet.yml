@@ -35,21 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get Project Version
-        id: get_version
-        run: |
-          VERSION=$(grep -oPm1 '(?<=<Version>)[^<]+' InputManager/InputManager.csproj)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Check version on NuGet
-        id: check
-        uses: MeilCli/nuget-update-check-action@v4
-        with:
-          package-id: 'Vaype.InputManager'
-          version: ${{ steps.get_version.outputs.VERSION }}
-
       - name: Publish to nuget
-        if: steps.check.outputs.is_update == 'true'
         run: |
           dotnet pack InputManager/InputManager.csproj -c Release -o out
           dotnet nuget push out/*.nupkg \
