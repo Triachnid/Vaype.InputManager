@@ -43,7 +43,7 @@ jobs:
 
       - name: Check if package exists
         id: check_nuget
-        uses: KinsonDigital/PackageMonster@v3.0.0
+        uses: KinsonDigital/PackageMonster@v1.0.0
         with:
           package-name: 'Vaype.InputManager'
           version: ${{ steps.get_version.outputs.version }}
